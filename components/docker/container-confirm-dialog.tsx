@@ -1,18 +1,25 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import {
+  PlayIcon,
+  RotateCwIcon,
+  SquareIcon,
+  TriangleAlertIcon,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { cn } from "@/lib/utils";
 
 type ContainerConfirmDialogProps = {
   open: boolean;
@@ -64,35 +71,66 @@ export function ContainerConfirmDialog({
     }
   }
 
-  return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="max-h-[85vh]">
-        <SheetHeader>
-          <SheetTitle>{actionLabel(action)} container</SheetTitle>
-          <SheetDescription>
-            {requiresNameMatch
-              ? `Type "${containerName}" to confirm this action.`
-              : `Confirm starting ${containerName}.`}
-          </SheetDescription>
-        </SheetHeader>
+  const config = actionConfig(action);
 
-        <div className="space-y-4 px-4">
-          <div className="rounded-lg border border-border bg-muted/30 px-3 py-2 text-sm">
-            <span className="text-muted-foreground">Container: </span>
-            <span className="font-mono">{containerName}</span>
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent showCloseButton={!isSubmitting}>
+        <DialogHeader>
+          <div className="flex items-start gap-3">
+            <div
+              className={cn(
+                "flex size-10 shrink-0 items-center justify-center rounded-full border",
+                config.iconClassName
+              )}
+            >
+              <config.icon className="size-4" aria-hidden />
+            </div>
+            <div className="min-w-0 space-y-1 pt-0.5">
+              <DialogTitle>{config.title}</DialogTitle>
+              <DialogDescription>{config.description(containerName)}</DialogDescription>
+            </div>
+          </div>
+        </DialogHeader>
+
+        <div className="space-y-4 px-6 pb-2 pt-1">
+          <div className="rounded-lg border border-border bg-muted/30 px-3 py-2.5">
+            <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+              Target container
+            </p>
+            <p className="mt-1 truncate font-mono text-sm">{containerName}</p>
           </div>
 
           {requiresNameMatch && (
             <div className="space-y-2">
-              <Label htmlFor="container-confirm">Container name</Label>
+              <Label htmlFor="container-confirm">
+                Type <span className="font-mono">{containerName}</span> to confirm
+              </Label>
               <Input
                 id="container-confirm"
                 value={confirmation}
                 onChange={(event) => setConfirmation(event.target.value)}
                 placeholder={containerName}
                 autoComplete="off"
+                autoFocus
                 disabled={isSubmitting}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && canSubmit) {
+                    void handleConfirm();
+                  }
+                }}
               />
+            </div>
+          )}
+
+          {requiresNameMatch && (
+            <div className="flex items-start gap-2 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300">
+              <TriangleAlertIcon className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+              <p>
+                {action === "stop"
+                  ? "Stopping a container will interrupt any running processes inside it."
+                  : "Restarting will briefly stop and start the container again."}
+              </p>
             </div>
           )}
 
@@ -103,7 +141,7 @@ export function ContainerConfirmDialog({
           )}
         </div>
 
-        <SheetFooter className="px-4 pb-4">
+        <DialogFooter>
           <Button
             type="button"
             variant="outline"
@@ -114,25 +152,52 @@ export function ContainerConfirmDialog({
           </Button>
           <Button
             type="button"
-            variant={action === "stop" ? "destructive" : "default"}
+            variant={config.buttonVariant}
             onClick={handleConfirm}
             disabled={!canSubmit}
           >
-            {isSubmitting ? "Working…" : actionLabel(action)}
+            {isSubmitting ? "Working…" : config.confirmLabel}
           </Button>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
-function actionLabel(action: "start" | "stop" | "restart"): string {
+function actionConfig(action: "start" | "stop" | "restart") {
   switch (action) {
     case "start":
-      return "Start";
+      return {
+        icon: PlayIcon,
+        iconClassName:
+          "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+        title: "Start container",
+        description: (name: string) =>
+          `Bring ${name} back online. This action is logged in the audit trail.`,
+        confirmLabel: "Start container",
+        buttonVariant: "default" as const,
+      };
     case "stop":
-      return "Stop";
+      return {
+        icon: SquareIcon,
+        iconClassName:
+          "border-destructive/20 bg-destructive/10 text-destructive",
+        title: "Stop container",
+        description: (name: string) =>
+          `Confirm you want to stop ${name}. This action cannot be undone from here.`,
+        confirmLabel: "Stop container",
+        buttonVariant: "destructive" as const,
+      };
     case "restart":
-      return "Restart";
+      return {
+        icon: RotateCwIcon,
+        iconClassName:
+          "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400",
+        title: "Restart container",
+        description: (name: string) =>
+          `Confirm you want to restart ${name}. The container will be briefly unavailable.`,
+        confirmLabel: "Restart container",
+        buttonVariant: "default" as const,
+      };
   }
 }
