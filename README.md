@@ -22,6 +22,36 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+## Docker (local)
+
+Run the app in Docker with hot reload — no local Node.js install required.
+
+```bash
+docker compose up --build
+```
+
+Open [http://localhost:3000](http://localhost:3000). Source changes on your machine are reflected automatically.
+
+Use a different host port:
+
+```bash
+PORT=3001 docker compose up --build
+```
+
+Stop the stack:
+
+```bash
+docker compose down
+```
+
+### Production-like container
+
+Build and run the optimized production image locally:
+
+```bash
+docker compose -f docker-compose.prod.yml up --build
+```
+
 ## Scripts
 
 | Command | Description |

@@ -1,0 +1,12 @@
+services:
+  homelab-dashboard:
+    container_name: homelab-dashboard
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+    restart: unless-stopped
