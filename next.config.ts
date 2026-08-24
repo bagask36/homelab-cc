@@ -5,6 +5,7 @@ const nextConfig: NextConfig = {
   serverExternalPackages: [
     "@prisma/client",
     "@prisma/adapter-pg",
+    "bcryptjs",
     "pg",
     "dockerode",
     "systeminformation",

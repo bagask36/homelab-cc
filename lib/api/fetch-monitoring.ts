@@ -13,7 +13,17 @@ type MonitoringResponse = {
 export async function fetchMonitoring<T extends MonitoringResponse>(
   url: string
 ): Promise<T> {
-  const response = await fetch(url);
+  const response = await fetch(url, { credentials: "same-origin" });
+
+  if (response.status === 401 && typeof window !== "undefined") {
+    const next = `${window.location.pathname}${window.location.search}`;
+    const loginUrl =
+      next && next !== "/"
+        ? `/login?from=${encodeURIComponent(next)}`
+        : "/login";
+    window.location.assign(loginUrl);
+    throw new Error("Unauthorized");
+  }
 
   if (!response.ok) {
     const body = (await response.json().catch(() => null)) as T | null;

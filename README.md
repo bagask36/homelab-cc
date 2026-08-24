@@ -4,6 +4,14 @@ A production-quality personal homelab monitoring dashboard built with Next.js, R
 
 ## Status
 
+**Milestone 7 — Authentication** (complete)
+
+- Username/password login with httpOnly JWT session cookie
+- `proxy.ts` protects dashboard pages and API routes
+- Bootstrap first admin from `AUTH_USERNAME` / `AUTH_PASSWORD`
+- Settings page for changing password
+- Sign out control in the header
+
 **Milestone 6 — Historical Metrics** (complete)
 
 - PostgreSQL + Prisma for periodic metric snapshots (30s collector)
@@ -51,14 +59,14 @@ A production-quality personal homelab monitoring dashboard built with Next.js, R
 ```bash
 npm install
 cp .env.example .env
-# Optional: set DATABASE_URL for historical metrics
+# Set DATABASE_URL, AUTH_SECRET, AUTH_USERNAME, AUTH_PASSWORD
 npx prisma migrate dev
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:3000](http://localhost:3000) and sign in.
 
-Live metrics work without PostgreSQL. Historical charts require a running database and `DATABASE_URL`.
+Authentication and historical metrics require PostgreSQL plus `DATABASE_URL` and `AUTH_SECRET`.
 
 ## Docker (local)
 
@@ -69,6 +77,11 @@ docker compose up --build
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
+
+Default Docker credentials (change these for anything beyond local use):
+
+- Username: `admin`
+- Password: `changeme`
 
 This uses the production image (fast and reliable) and starts PostgreSQL automatically. Stop any local `npm run dev` first if port 3000 is already in use.
 
@@ -122,6 +135,6 @@ lsof -i :3000
 
 ## Next Milestone
 
-**Milestone 7 — Authentication**
+**Milestone 8 — Alerts**
 
-- Protect the dashboard and API routes
+- CPU, RAM, storage, service, container, and tunnel warnings

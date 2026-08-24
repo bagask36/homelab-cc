@@ -2,6 +2,7 @@
 
 import { MobileSidebar } from "@/components/layout/sidebar";
 import { HeaderStatus } from "@/components/layout/header-status";
+import { UserMenu } from "@/components/layout/user-menu";
 import { useMetrics } from "@/hooks/useMetrics";
 
 export function Header() {
@@ -29,6 +30,7 @@ export function Header() {
         </div>
 
         <HeaderStatus />
+        <UserMenu />
       </div>
     </header>
   );

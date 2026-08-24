@@ -50,6 +50,9 @@ services:
     environment:
       NODE_ENV: production
       DATABASE_URL: postgresql://${POSTGRES_USER:-homelab}:${POSTGRES_PASSWORD:-homelab}@postgres:5432/${POSTGRES_DB:-homelab}
+      AUTH_SECRET: ${AUTH_SECRET:-homelab-cc-dev-secret-change-me}
+      AUTH_USERNAME: ${AUTH_USERNAME:-admin}
+      AUTH_PASSWORD: ${AUTH_PASSWORD:-changeme}
       DOCKER_SOCKET: /var/run/docker.sock
       SERVICE_HOST: ${SERVICE_HOST:-host.docker.internal}
       POSTGRES_HOST: ${POSTGRES_HOST:-host.docker.internal}
