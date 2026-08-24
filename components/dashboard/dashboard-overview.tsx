@@ -1,10 +1,10 @@
 "use client";
 
-import { DashboardPanel } from "@/components/dashboard/panel";
+import { DockerOverviewPanel } from "@/components/docker/docker-overview-panel";
 import { MetricsCharts } from "@/components/dashboard/metrics-charts";
 import { NetworkChart } from "@/components/dashboard/network-chart";
 import { SummaryCard } from "@/components/dashboard/summary-card";
-import { StatusIndicator } from "@/components/shared/status-indicator";
+import { ServicesPanel } from "@/components/services/services-panel";
 import { Badge } from "@/components/ui/badge";
 import { useMetrics } from "@/hooks/useMetrics";
 import { useStorage } from "@/hooks/useStorage";
@@ -22,21 +22,13 @@ import {
   PackageIcon,
 } from "lucide-react";
 import { useNetwork } from "@/hooks/useNetwork";
-
-const services = [
-  "Docker",
-  "PostgreSQL",
-  "Redis",
-  "Ollama",
-  "Open WebUI",
-  "Cloudflare Tunnel",
-  "Nginx Proxy Manager",
-];
+import { useDocker } from "@/hooks/useDocker";
 
 export function DashboardOverview() {
   const { data, error, isLoading } = useMetrics();
   const { data: storageData, isLoading: storageLoading } = useStorage();
   const { data: networkData } = useNetwork();
+  const { data: dockerData, isLoading: dockerLoading } = useDocker();
 
   return (
     <div className="space-y-6">
@@ -94,8 +86,12 @@ export function DashboardOverview() {
         />
         <SummaryCard
           title="Docker"
-          value="— running"
-          subtitle="Milestone 4"
+          value={
+            dockerLoading && !dockerData
+              ? "…"
+              : `${dockerData?.summary?.running ?? "—"} running`
+          }
+          subtitle={`${dockerData?.summary?.stopped ?? "—"} stopped`}
           icon={PackageIcon}
         />
       </section>
@@ -114,43 +110,10 @@ export function DashboardOverview() {
           className="xl:col-span-2"
         />
 
-        <DashboardPanel title="Docker Overview" description="Container status">
-          <div className="space-y-4">
-            <div className="grid grid-cols-3 gap-3 text-center">
-              {[
-                { label: "Running", value: "—" },
-                { label: "Stopped", value: "—" },
-                { label: "Unhealthy", value: "—" },
-              ].map((item) => (
-                <div
-                  key={item.label}
-                  className="rounded-lg border border-border bg-muted/20 px-3 py-4"
-                >
-                  <p className="text-lg font-semibold">{item.value}</p>
-                  <p className="text-xs text-muted-foreground">{item.label}</p>
-                </div>
-              ))}
-            </div>
-            <p className="text-center text-xs text-muted-foreground">
-              Container details will appear in Milestone 4
-            </p>
-          </div>
-        </DashboardPanel>
+        <DockerOverviewPanel />
       </section>
 
-      <DashboardPanel title="Services" description="Health check status">
-        <ul className="divide-y divide-border rounded-lg border border-border">
-          {services.map((service) => (
-            <li
-              key={service}
-              className="flex items-center justify-between px-4 py-3"
-            >
-              <span className="text-sm font-medium">{service}</span>
-              <StatusIndicator status="unknown" label="Unknown" />
-            </li>
-          ))}
-        </ul>
-      </DashboardPanel>
+      <ServicesPanel />
     </div>
   );
 }

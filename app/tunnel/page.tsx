@@ -1,11 +1,5 @@
-import { PagePlaceholder } from "@/components/shared/page-placeholder";
+import { TunnelOverview } from "@/components/tunnel/tunnel-overview";
 
 export default function TunnelPage() {
-  return (
-    <PagePlaceholder
-      title="Cloudflare Tunnel"
-      description="Monitor tunnel status, connections, and routes."
-      milestone="Milestone 5"
-    />
-  );
+  return <TunnelOverview />;
 }

@@ -4,6 +4,20 @@ A production-quality personal homelab monitoring dashboard built with Next.js, R
 
 ## Status
 
+**Milestone 5 — Services** (complete)
+
+- `GET /api/services` — health checks for Docker, PostgreSQL, Redis, Ollama, Open WebUI, Cloudflare Tunnel, Nginx Proxy Manager
+- `GET /api/ollama` — model list, running models, response time
+- `GET /api/tunnel` — Cloudflare Tunnel metrics probe
+- Live services panel on dashboard plus `/services`, `/ollama`, `/tunnel` pages
+
+**Milestone 4 — Docker** (complete)
+
+- `GET /api/docker` — container list, status, image, CPU, memory, network, restart count
+- Docker Engine integration via `/var/run/docker.sock`
+- Dashboard Docker card and overview panel
+- `/containers` page with full container table
+
 **Milestone 3 — Storage and Network** (complete)
 
 - `GET /api/storage` — disk usage and filesystem list
@@ -44,6 +58,13 @@ docker compose up --build
 Open [http://localhost:3000](http://localhost:3000).
 
 This uses the production image (fast and reliable). Stop any local `npm run dev` first if port 3000 is already in use.
+
+Docker monitoring requires mounting the Docker socket (already configured in `docker-compose.yml`):
+
+```yaml
+volumes:
+  - /var/run/docker.sock:/var/run/docker.sock:ro
+```
 
 Use a different host port:
 
@@ -86,8 +107,7 @@ lsof -i :3000
 
 ## Next Milestone
 
-**Milestone 4 — Docker**
+**Milestone 6 — Historical Metrics**
 
-- Docker Engine integration via `/var/run/docker.sock`
-- Implement `GET /api/docker`
-- Container list, status, CPU, memory, network, restart count
+- Introduce PostgreSQL for periodic metric snapshots
+- Historical charts for 1h, 6h, 24h, 7d, 30d

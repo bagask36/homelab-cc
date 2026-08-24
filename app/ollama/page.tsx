@@ -1,11 +1,5 @@
-import { PagePlaceholder } from "@/components/shared/page-placeholder";
+import { OllamaOverview } from "@/components/ollama/ollama-overview";
 
 export default function OllamaPage() {
-  return (
-    <PagePlaceholder
-      title="Ollama"
-      description="Monitor Ollama status, models, and API response times."
-      milestone="Milestone 5"
-    />
-  );
+  return <OllamaOverview />;
 }
