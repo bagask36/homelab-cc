@@ -1,4 +1,5 @@
 import type { CpuMetrics, MemoryMetrics, MetricsResponse } from "@/types/metrics";
+import type { StorageSummary } from "@/types/storage";
 import type { StatusLevel } from "@/components/shared/status-indicator";
 
 export function formatPercent(value: number | undefined): string {
@@ -14,6 +15,37 @@ export function formatBytesGB(bytes: number | undefined): string {
 export function formatMemorySummary(memory: MemoryMetrics | undefined): string {
   if (!memory) return "— / — GB";
   return `${formatBytesGB(memory.used)} / ${formatBytesGB(memory.total)} GB`;
+}
+
+export function formatStorageSummary(storage: StorageSummary | undefined): string {
+  if (!storage) return "— / — GB";
+  return `${formatBytesGB(storage.used)} / ${formatBytesGB(storage.total)} GB`;
+}
+
+export function formatBytesPerSecond(bytesPerSecond: number | undefined): string {
+  if (bytesPerSecond === undefined || !Number.isFinite(bytesPerSecond)) {
+    return "—";
+  }
+
+  if (bytesPerSecond >= 1024 ** 2) {
+    return `${(bytesPerSecond / 1024 ** 2).toFixed(2)} MB/s`;
+  }
+
+  if (bytesPerSecond >= 1024) {
+    return `${(bytesPerSecond / 1024).toFixed(1)} KB/s`;
+  }
+
+  return `${bytesPerSecond.toFixed(0)} B/s`;
+}
+
+export function formatBytesCompact(bytes: number | undefined): string {
+  if (bytes === undefined) return "—";
+
+  if (bytes >= 1024 ** 4) return `${(bytes / 1024 ** 4).toFixed(2)} TB`;
+  if (bytes >= 1024 ** 3) return `${(bytes / 1024 ** 3).toFixed(1)} GB`;
+  if (bytes >= 1024 ** 2) return `${(bytes / 1024 ** 2).toFixed(1)} MB`;
+  if (bytes >= 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${bytes} B`;
 }
 
 export function formatUptime(seconds: number | undefined): string {

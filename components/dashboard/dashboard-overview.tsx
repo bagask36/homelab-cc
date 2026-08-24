@@ -1,18 +1,18 @@
 "use client";
 
-import {
-  ChartPlaceholder,
-  DashboardPanel,
-} from "@/components/dashboard/panel";
+import { DashboardPanel } from "@/components/dashboard/panel";
 import { MetricsCharts } from "@/components/dashboard/metrics-charts";
+import { NetworkChart } from "@/components/dashboard/network-chart";
 import { SummaryCard } from "@/components/dashboard/summary-card";
 import { StatusIndicator } from "@/components/shared/status-indicator";
 import { Badge } from "@/components/ui/badge";
 import { useMetrics } from "@/hooks/useMetrics";
+import { useStorage } from "@/hooks/useStorage";
 import {
   formatLoadAverage,
   formatMemorySummary,
   formatPercent,
+  formatStorageSummary,
   formatUptime,
 } from "@/lib/monitoring/format";
 import {
@@ -21,6 +21,7 @@ import {
   MemoryStickIcon,
   PackageIcon,
 } from "lucide-react";
+import { useNetwork } from "@/hooks/useNetwork";
 
 const services = [
   "Docker",
@@ -34,6 +35,8 @@ const services = [
 
 export function DashboardOverview() {
   const { data, error, isLoading } = useMetrics();
+  const { data: storageData, isLoading: storageLoading } = useStorage();
+  const { data: networkData } = useNetwork();
 
   return (
     <div className="space-y-6">
@@ -81,8 +84,12 @@ export function DashboardOverview() {
         />
         <SummaryCard
           title="Storage"
-          value="—"
-          subtitle="Milestone 3"
+          value={
+            storageLoading && !storageData
+              ? "…"
+              : formatPercent(storageData?.summary?.usagePercent)
+          }
+          subtitle={formatStorageSummary(storageData?.summary)}
           icon={HardDriveIcon}
         />
         <SummaryCard
@@ -100,13 +107,12 @@ export function DashboardOverview() {
       />
 
       <section className="grid gap-4 xl:grid-cols-3">
-        <DashboardPanel
-          title="Network Traffic"
-          description="Download and upload"
+        <NetworkChart
+          rxBytes={networkData?.totals?.rxBytes}
+          txBytes={networkData?.totals?.txBytes}
+          timestamp={networkData?.timestamp}
           className="xl:col-span-2"
-        >
-          <ChartPlaceholder label="Network metrics will appear in Milestone 3" />
-        </DashboardPanel>
+        />
 
         <DashboardPanel title="Docker Overview" description="Container status">
           <div className="space-y-4">

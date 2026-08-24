@@ -1,11 +1,5 @@
-import { PagePlaceholder } from "@/components/shared/page-placeholder";
+import { NetworkOverview } from "@/components/network/network-overview";
 
 export default function NetworkPage() {
-  return (
-    <PagePlaceholder
-      title="Network"
-      description="Monitor network traffic and interface statistics."
-      milestone="Milestone 3"
-    />
-  );
+  return <NetworkOverview />;
 }

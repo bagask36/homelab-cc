@@ -4,6 +4,13 @@ A production-quality personal homelab monitoring dashboard built with Next.js, R
 
 ## Status
 
+**Milestone 3 — Storage and Network** (complete)
+
+- `GET /api/storage` — disk usage and filesystem list
+- `GET /api/network` — RX/TX counters per interface
+- Live storage summary card and network throughput chart
+- `/storage` and `/network` pages with detailed views
+
 **Milestone 2 — Server Monitoring** (complete)
 
 - `GET /api/metrics` — hostname, OS, CPU, RAM, uptime, load average
@@ -79,8 +86,8 @@ lsof -i :3000
 
 ## Next Milestone
 
-**Milestone 3 — Storage and Network**
+**Milestone 4 — Docker**
 
-- Implement `GET /api/storage` and `GET /api/network`
-- Add disk usage, filesystem info, network RX/TX
-- Wire storage summary card and network chart
+- Docker Engine integration via `/var/run/docker.sock`
+- Implement `GET /api/docker`
+- Container list, status, CPU, memory, network, restart count

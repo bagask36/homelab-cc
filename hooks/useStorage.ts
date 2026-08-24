@@ -4,10 +4,10 @@ import {
   fetchMonitoring,
   getPollInterval,
 } from "@/lib/api/fetch-monitoring";
-import type { MetricsResponse } from "@/types/metrics";
+import type { StorageResponse } from "@/types/storage";
 
-export function useMetrics() {
-  return useSWR<MetricsResponse>("/api/metrics", fetchMonitoring, {
+export function useStorage() {
+  return useSWR<StorageResponse>("/api/storage", fetchMonitoring, {
     refreshInterval: getPollInterval(),
     revalidateOnFocus: true,
     keepPreviousData: true,

@@ -1,11 +1,5 @@
-import { PagePlaceholder } from "@/components/shared/page-placeholder";
+import { StorageOverview } from "@/components/storage/storage-overview";
 
 export default function StoragePage() {
-  return (
-    <PagePlaceholder
-      title="Storage"
-      description="View disk usage and filesystem information."
-      milestone="Milestone 3"
-    />
-  );
+  return <StorageOverview />;
 }
