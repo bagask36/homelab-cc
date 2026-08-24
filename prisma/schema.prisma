@@ -26,3 +26,17 @@ model User {
   createdAt    DateTime @default(now()) @db.Timestamptz(3)
   updatedAt    DateTime @updatedAt @db.Timestamptz(3)
 }
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  timestamp    DateTime @default(now()) @db.Timestamptz(3)
+  userId       String
+  username     String
+  action       String
+  target       String
+  targetName   String?
+  success      Boolean
+  message      String?
+
+  @@index([timestamp(sort: Desc)])
+}

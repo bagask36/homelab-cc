@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { AlertsPanel } from "@/components/alerts/alerts-panel";
 import { DockerOverviewPanel } from "@/components/docker/docker-overview-panel";
 import { MetricsCharts } from "@/components/dashboard/metrics-charts";
 import { NetworkChart } from "@/components/dashboard/network-chart";
@@ -131,6 +132,8 @@ export function DashboardOverview() {
       </section>
 
       <ServicesPanel />
+
+      <AlertsPanel />
     </div>
   );
 }

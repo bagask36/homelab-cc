@@ -4,6 +4,20 @@ A production-quality personal homelab monitoring dashboard built with Next.js, R
 
 ## Status
 
+**Milestone 9 — Control Panel** (complete)
+
+- Start, stop, and restart containers with explicit name confirmation
+- View container logs (last 200 lines, audit logged)
+- PostgreSQL audit log for all control actions
+- Control actions and audit history on `/containers`
+
+**Milestone 8 — Alerts** (complete)
+
+- `GET /api/alerts` — live evaluation of CPU, memory, storage, services, containers, and tunnel
+- Warning/critical thresholds for resource usage
+- Dashboard alerts panel and dedicated `/alerts` page
+- Header shows active alert count and overall status
+
 **Milestone 7 — Authentication** (complete)
 
 - Username/password login with httpOnly JWT session cookie
@@ -135,6 +149,8 @@ lsof -i :3000
 
 ## Next Milestone
 
-**Milestone 8 — Alerts**
+All planned MVP milestones are complete. Possible follow-ups:
 
-- CPU, RAM, storage, service, container, and tunnel warnings
+- Alert persistence and notification channels
+- Multi-user roles and permissions
+- Remote homelab deployment hardening

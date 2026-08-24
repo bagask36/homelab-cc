@@ -1,8 +1,11 @@
 "use client";
 
+import { AuditLogPanel } from "@/components/docker/audit-log-panel";
+import { ContainerControls } from "@/components/docker/container-controls";
 import { DashboardPanel } from "@/components/dashboard/panel";
 import { SummaryCard } from "@/components/dashboard/summary-card";
 import { StatusIndicator } from "@/components/shared/status-indicator";
+import { useAuditLogs } from "@/hooks/useAuditLogs";
 import { useDocker } from "@/hooks/useDocker";
 import {
   formatBytesCompact,
@@ -16,14 +19,20 @@ import {
 import { PackageIcon, PlayIcon, SquareIcon, TriangleAlertIcon } from "lucide-react";
 
 export function ContainersOverview() {
-  const { data, error, isLoading } = useDocker();
+  const { data, error, isLoading, mutate } = useDocker();
+  const { mutate: mutateAuditLogs } = useAuditLogs(30);
+
+  function handleActionComplete() {
+    void mutate();
+    void mutateAuditLogs();
+  }
 
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-semibold tracking-tight">Containers</h2>
         <p className="text-sm text-muted-foreground">
-          Docker containers, status, and resource usage
+          Docker containers, status, resource usage, and controls
         </p>
       </div>
 
@@ -72,11 +81,11 @@ export function ContainersOverview() {
 
       <DashboardPanel
         title="All Containers"
-        description="Status, image, and resource usage"
+        description="Status, image, resource usage, and control actions"
       >
         {data?.containers && data.containers.length > 0 ? (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[960px] text-left text-sm">
+            <table className="w-full min-w-[1100px] text-left text-sm">
               <thead>
                 <tr className="border-b border-border text-xs text-muted-foreground">
                   <th className="px-4 py-3 font-medium">Name</th>
@@ -86,6 +95,7 @@ export function ContainersOverview() {
                   <th className="px-4 py-3 font-medium">Memory</th>
                   <th className="px-4 py-3 font-medium">Network</th>
                   <th className="px-4 py-3 font-medium">Restarts</th>
+                  <th className="px-4 py-3 font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -145,6 +155,12 @@ export function ContainersOverview() {
                     <td className="px-4 py-3 font-mono text-xs">
                       {container.restartCount}
                     </td>
+                    <td className="px-4 py-3">
+                      <ContainerControls
+                        container={container}
+                        onActionComplete={handleActionComplete}
+                      />
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -158,6 +174,8 @@ export function ContainersOverview() {
           </div>
         )}
       </DashboardPanel>
+
+      <AuditLogPanel />
     </div>
   );
 }
