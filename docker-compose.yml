@@ -1,4 +1,37 @@
 services:
+  postgres:
+    container_name: homelab-postgres
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-homelab}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-homelab}
+      POSTGRES_DB: ${POSTGRES_DB:-homelab}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-homelab} -d ${POSTGRES_DB:-homelab}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  migrate:
+    container_name: homelab-migrate
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: migrate
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-homelab}:${POSTGRES_PASSWORD:-homelab}@postgres:5432/${POSTGRES_DB:-homelab}
+    restart: "no"
+
   homelab-dashboard:
     container_name: homelab-dashboard
     build:
@@ -7,10 +40,16 @@ services:
       target: runner
     ports:
       - "${PORT:-3000}:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     extra_hosts:
       - "host.docker.internal:host-gateway"
     environment:
       NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-homelab}:${POSTGRES_PASSWORD:-homelab}@postgres:5432/${POSTGRES_DB:-homelab}
       DOCKER_SOCKET: /var/run/docker.sock
       SERVICE_HOST: ${SERVICE_HOST:-host.docker.internal}
       POSTGRES_HOST: ${POSTGRES_HOST:-host.docker.internal}
@@ -26,3 +65,6 @@ services:
     # Root required to read the Docker socket on most hosts
     user: "0:0"
     restart: unless-stopped
+
+volumes:
+  postgres_data:

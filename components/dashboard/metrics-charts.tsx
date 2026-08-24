@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   CartesianGrid,
   Line,
@@ -12,23 +12,54 @@ import {
 } from "recharts";
 
 import { DashboardPanel } from "@/components/dashboard/panel";
+import { useMetricsHistory } from "@/hooks/useMetricsHistory";
+import { formatChartAxisLabel } from "@/lib/monitoring/format";
+import type { MetricsHistoryRange } from "@/types/metrics-history";
 import type { MetricsHistoryPoint } from "@/types/metrics";
 
-const MAX_POINTS = 30;
+const MAX_LIVE_POINTS = 30;
 
 type MetricsChartsProps = {
   cpu?: number;
   memory?: number;
   timestamp?: string;
+  range: MetricsHistoryRange;
 };
 
-export function MetricsCharts({ cpu, memory, timestamp }: MetricsChartsProps) {
-  const history = useMetricsHistory(cpu, memory, timestamp);
+export function MetricsCharts({
+  cpu,
+  memory,
+  timestamp,
+  range,
+}: MetricsChartsProps) {
+  const liveHistory = useLiveMetricsHistory(cpu, memory, timestamp, range);
+  const { data: historyData, error, isLoading } = useMetricsHistory(range);
+
+  const history = useMemo(() => {
+    if (range === "live") {
+      return liveHistory;
+    }
+
+    return (
+      historyData?.points.map((point) => ({
+        time: formatChartAxisLabel(point.timestamp, range),
+        cpu: point.cpu,
+        memory: point.memory,
+      })) ?? []
+    );
+  }, [historyData?.points, liveHistory, range]);
+
   const hasHistory = history.length > 0;
+  const isHistoricalLoading =
+    range !== "live" && isLoading && !historyData && !error;
+  const description =
+    range === "live"
+      ? "Usage over time (live)"
+      : `Usage over the last ${range}`;
 
   return (
     <section className="grid gap-4 xl:grid-cols-2">
-      <DashboardPanel title="CPU Usage" description="Usage over time (live)">
+      <DashboardPanel title="CPU Usage" description={description}>
         {hasHistory ? (
           <Chart
             data={history}
@@ -37,11 +68,19 @@ export function MetricsCharts({ cpu, memory, timestamp }: MetricsChartsProps) {
             label="CPU %"
           />
         ) : (
-          <EmptyChart label="Collecting CPU samples…" />
+          <EmptyChart
+            label={
+              isHistoricalLoading
+                ? "Loading historical CPU data…"
+                : range === "live"
+                  ? "Collecting CPU samples…"
+                  : "No historical CPU data yet"
+            }
+          />
         )}
       </DashboardPanel>
 
-      <DashboardPanel title="Memory Usage" description="Usage over time (live)">
+      <DashboardPanel title="Memory Usage" description={description}>
         {hasHistory ? (
           <Chart
             data={history}
@@ -50,21 +89,35 @@ export function MetricsCharts({ cpu, memory, timestamp }: MetricsChartsProps) {
             label="Memory %"
           />
         ) : (
-          <EmptyChart label="Collecting memory samples…" />
+          <EmptyChart
+            label={
+              isHistoricalLoading
+                ? "Loading historical memory data…"
+                : range === "live"
+                  ? "Collecting memory samples…"
+                  : "No historical memory data yet"
+            }
+          />
         )}
       </DashboardPanel>
     </section>
   );
 }
 
-function useMetricsHistory(
-  cpu?: number,
-  memory?: number,
-  timestamp?: string
+function useLiveMetricsHistory(
+  cpu: number | undefined,
+  memory: number | undefined,
+  timestamp: string | undefined,
+  range: MetricsHistoryRange
 ): MetricsHistoryPoint[] {
   const [history, setHistory] = useState<MetricsHistoryPoint[]>([]);
 
   useEffect(() => {
+    if (range !== "live") {
+      queueMicrotask(() => setHistory([]));
+      return;
+    }
+
     if (cpu === undefined || memory === undefined || !timestamp) return;
 
     queueMicrotask(() => {
@@ -80,10 +133,10 @@ function useMetricsHistory(
           return current;
         }
 
-        return [...current, { time, cpu, memory }].slice(-MAX_POINTS);
+        return [...current, { time, cpu, memory }].slice(-MAX_LIVE_POINTS);
       });
     });
-  }, [cpu, memory, timestamp]);
+  }, [cpu, memory, range, timestamp]);
 
   return history;
 }

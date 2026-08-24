@@ -1,11 +1,15 @@
 "use client";
 
+import { useState } from "react";
+
 import { DockerOverviewPanel } from "@/components/docker/docker-overview-panel";
 import { MetricsCharts } from "@/components/dashboard/metrics-charts";
 import { NetworkChart } from "@/components/dashboard/network-chart";
 import { SummaryCard } from "@/components/dashboard/summary-card";
 import { ServicesPanel } from "@/components/services/services-panel";
+import { ChartRangeSelector } from "@/components/shared/chart-range-selector";
 import { Badge } from "@/components/ui/badge";
+import type { MetricsHistoryRange } from "@/types/metrics-history";
 import { useMetrics } from "@/hooks/useMetrics";
 import { useStorage } from "@/hooks/useStorage";
 import {
@@ -25,6 +29,7 @@ import { useNetwork } from "@/hooks/useNetwork";
 import { useDocker } from "@/hooks/useDocker";
 
 export function DashboardOverview() {
+  const [chartRange, setChartRange] = useState<MetricsHistoryRange>("live");
   const { data, error, isLoading } = useMetrics();
   const { data: storageData, isLoading: storageLoading } = useStorage();
   const { data: networkData } = useNetwork();
@@ -96,10 +101,21 @@ export function DashboardOverview() {
         />
       </section>
 
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h3 className="text-sm font-medium">Metrics history</h3>
+          <p className="text-xs text-muted-foreground">
+            Live polling or stored snapshots from PostgreSQL
+          </p>
+        </div>
+        <ChartRangeSelector value={chartRange} onChange={setChartRange} />
+      </div>
+
       <MetricsCharts
         cpu={data?.cpu?.usage}
         memory={data?.memory?.usagePercent}
         timestamp={data?.timestamp}
+        range={chartRange}
       />
 
       <section className="grid gap-4 xl:grid-cols-3">
@@ -108,6 +124,7 @@ export function DashboardOverview() {
           txBytes={networkData?.totals?.txBytes}
           timestamp={networkData?.timestamp}
           className="xl:col-span-2"
+          range={chartRange}
         />
 
         <DockerOverviewPanel />

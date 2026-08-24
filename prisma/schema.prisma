@@ -1,0 +1,20 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model MetricSnapshot {
+  id            String   @id @default(cuid())
+  timestamp     DateTime @default(now()) @db.Timestamptz(3)
+  cpuUsage      Float
+  memoryUsage   Float
+  storageUsage  Float?
+  networkRxRate Float?
+  networkTxRate Float?
+
+  @@index([timestamp(sort: Desc)])
+}

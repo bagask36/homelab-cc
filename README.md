@@ -4,6 +4,14 @@ A production-quality personal homelab monitoring dashboard built with Next.js, R
 
 ## Status
 
+**Milestone 6 — Historical Metrics** (complete)
+
+- PostgreSQL + Prisma for periodic metric snapshots (30s collector)
+- `GET /api/metrics/history?range=1h|6h|24h|7d|30d` with downsampling
+- Dashboard chart range selector: Live, 1h, 6h, 24h, 7d, 30d
+- 30-day retention with automatic cleanup
+- Docker Compose includes PostgreSQL and applies migrations via a one-shot `migrate` service
+
 **Milestone 5 — Services** (complete)
 
 - `GET /api/services` — health checks for Docker, PostgreSQL, Redis, Ollama, Open WebUI, Cloudflare Tunnel, Nginx Proxy Manager
@@ -42,10 +50,15 @@ A production-quality personal homelab monitoring dashboard built with Next.js, R
 
 ```bash
 npm install
+cp .env.example .env
+# Optional: set DATABASE_URL for historical metrics
+npx prisma migrate dev
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
+
+Live metrics work without PostgreSQL. Historical charts require a running database and `DATABASE_URL`.
 
 ## Docker (local)
 
@@ -57,7 +70,7 @@ docker compose up --build
 
 Open [http://localhost:3000](http://localhost:3000).
 
-This uses the production image (fast and reliable). Stop any local `npm run dev` first if port 3000 is already in use.
+This uses the production image (fast and reliable) and starts PostgreSQL automatically. Stop any local `npm run dev` first if port 3000 is already in use.
 
 Docker monitoring requires mounting the Docker socket (already configured in `docker-compose.yml`):
 
@@ -100,6 +113,8 @@ lsof -i :3000
 | `npm run build` | Production build |
 | `npm run start` | Start production server |
 | `npm run lint` | Run ESLint |
+| `npm run typecheck` | Run TypeScript checks |
+| `npx prisma migrate dev` | Apply database migrations (local dev) |
 
 ## Requirements
 
@@ -107,7 +122,6 @@ lsof -i :3000
 
 ## Next Milestone
 
-**Milestone 6 — Historical Metrics**
+**Milestone 7 — Authentication**
 
-- Introduce PostgreSQL for periodic metric snapshots
-- Historical charts for 1h, 6h, 24h, 7d, 30d
+- Protect the dashboard and API routes

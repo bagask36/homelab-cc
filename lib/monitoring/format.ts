@@ -1,4 +1,5 @@
 import type { CpuMetrics, MemoryMetrics, MetricsResponse } from "@/types/metrics";
+import type { MetricsHistoryRange } from "@/types/metrics-history";
 import type { StorageSummary } from "@/types/storage";
 import type { StatusLevel } from "@/components/shared/status-indicator";
 
@@ -66,6 +67,35 @@ export function formatTimestamp(iso: string | undefined): string {
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",
+  });
+}
+
+export function formatChartAxisLabel(
+  iso: string,
+  range: MetricsHistoryRange
+): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "—";
+
+  if (range === "7d" || range === "30d") {
+    return date.toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+    });
+  }
+
+  if (range === "24h") {
+    return date.toLocaleString(undefined, {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }
+
+  return date.toLocaleTimeString(undefined, {
+    hour: "2-digit",
+    minute: "2-digit",
   });
 }
 
