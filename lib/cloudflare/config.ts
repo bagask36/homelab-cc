@@ -3,6 +3,7 @@ import { dirname } from "node:path";
 
 import type { SessionUser } from "@/lib/auth/session";
 import { writeAuditLog } from "@/lib/audit/logger";
+import { reloadCloudflared } from "@/lib/cloudflare/reload";
 import { getPrisma, isDatabaseConfigured } from "@/lib/db/prisma";
 import type { TunnelIngress, TunnelSettings } from "@/types/tunnel-config";
 
@@ -304,23 +305,10 @@ export async function applyTunnelConfig(user: SessionUser): Promise<{
     throw new TunnelConfigError(message, 500);
   }
 
-  let reloadMessage = "";
-  if (settings.reloadCommand) {
-    try {
-      const { exec } = await import("node:child_process");
-      const { promisify } = await import("node:util");
-      const execAsync = promisify(exec);
-      await execAsync(settings.reloadCommand, { timeout: 15_000 });
-      reloadMessage = " Reloaded cloudflared.";
-    } catch (error) {
-      reloadMessage =
-        error instanceof Error
-          ? ` Config written but reload failed: ${error.message}`
-          : " Config written but reload failed.";
-    }
-  }
-
-  const message = `Wrote ${settings.configPath}.${reloadMessage}`;
+  const reload = await reloadCloudflared(settings.reloadCommand);
+  const message = reload.reloaded
+    ? `Wrote ${settings.configPath}. ${reload.message}`
+    : `Wrote ${settings.configPath}. ${reload.message}`;
 
   await writeAuditLog({
     user,

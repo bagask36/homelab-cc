@@ -44,6 +44,8 @@ services:
     # Share host network so 127.0.0.1 reaches host services (cloudflared, etc.)
     # `ports:` is ignored with host mode — app binds PORT on the host directly.
     network_mode: host
+    # Share host PID namespace so cloudflared can be reloaded via signal after apply
+    pid: host
     depends_on:
       postgres:
         condition: service_healthy
