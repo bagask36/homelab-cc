@@ -8,13 +8,16 @@ FROM base AS deps
 COPY package.json package-lock.json ./
 COPY prisma ./prisma
 COPY prisma.config.ts ./prisma.config.ts
-# postinstall runs `prisma generate`, which requires a datasource URL but does not connect
-RUN DATABASE_URL="postgresql://placeholder:placeholder@127.0.0.1:5432/placeholder" npm ci
+# Skip lifecycle scripts so `postinstall` cannot invoke a stray Prisma 6 CLI.
+# Generate the client explicitly with the Prisma 7 binary from node_modules.
+RUN npm ci --ignore-scripts
+RUN ./node_modules/.bin/prisma generate
 
 # Local development with hot reload
 FROM base AS development
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+RUN ./node_modules/.bin/prisma generate
 ENV NODE_ENV=development
 ENV NEXT_TELEMETRY_DISABLED=1
 EXPOSE 3000
@@ -25,7 +28,7 @@ FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN DATABASE_URL="postgresql://placeholder:placeholder@127.0.0.1:5432/placeholder" npx prisma generate
+RUN ./node_modules/.bin/prisma generate
 RUN npm run build
 
 # Database migrations (one-shot compose service)
