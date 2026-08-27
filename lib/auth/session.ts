@@ -79,13 +79,22 @@ export async function getSession(): Promise<SessionUser | null> {
   return verifySessionToken(token);
 }
 
+function cookieSecure(): boolean {
+  // Homelab often runs over HTTP (LAN / Tailscale). Only mark cookies Secure
+  // when explicitly enabled, or when AUTH_COOKIE_SECURE is unset and we are
+  // in production behind HTTPS.
+  if (process.env.AUTH_COOKIE_SECURE === "true") return true;
+  if (process.env.AUTH_COOKIE_SECURE === "false") return false;
+  return process.env.NODE_ENV === "production";
+}
+
 export function sessionCookieOptions(token: string) {
   return {
     name: SESSION_COOKIE_NAME,
     value: token,
     httpOnly: true,
     sameSite: "lax" as const,
-    secure: process.env.NODE_ENV === "production",
+    secure: cookieSecure(),
     path: "/",
     maxAge: SESSION_MAX_AGE_SECONDS,
   };
@@ -97,7 +106,7 @@ export function clearedSessionCookieOptions() {
     value: "",
     httpOnly: true,
     sameSite: "lax" as const,
-    secure: process.env.NODE_ENV === "production",
+    secure: cookieSecure(),
     path: "/",
     maxAge: 0,
   };

@@ -53,6 +53,8 @@ services:
       AUTH_SECRET: ${AUTH_SECRET:-homelab-cc-dev-secret-change-me}
       AUTH_USERNAME: ${AUTH_USERNAME:-admin}
       AUTH_PASSWORD: ${AUTH_PASSWORD:-changeme}
+      # false for HTTP (LAN/Tailscale); set true when served over HTTPS
+      AUTH_COOKIE_SECURE: ${AUTH_COOKIE_SECURE:-false}
       DOCKER_SOCKET: /var/run/docker.sock
       SERVICE_HOST: ${SERVICE_HOST:-host.docker.internal}
       POSTGRES_HOST: ${POSTGRES_HOST:-host.docker.internal}
