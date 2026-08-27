@@ -77,7 +77,11 @@ export function DashboardOverview() {
               ? "…"
               : formatPercent(data?.memory?.usagePercent)
           }
-          subtitle={formatMemorySummary(data?.memory)}
+          subtitle={
+            data?.memory?.nodes && data.memory.nodes.length > 1
+              ? `${data.memory.nodes.length} nodes · ${formatMemorySummary(data.memory)}`
+              : formatMemorySummary(data?.memory)
+          }
           icon={MemoryStickIcon}
         />
         <SummaryCard
@@ -115,6 +119,7 @@ export function DashboardOverview() {
       <MetricsCharts
         cpu={data?.cpu?.usage}
         memory={data?.memory?.usagePercent}
+        nodes={data?.memory?.nodes}
         timestamp={data?.timestamp}
         range={chartRange}
       />

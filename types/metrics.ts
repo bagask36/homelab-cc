@@ -5,11 +5,33 @@ export const cpuMetricsSchema = z.object({
   loadAverage: z.tuple([z.number(), z.number(), z.number()]),
 });
 
+export const memoryNodeSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  total: z.number(),
+  used: z.number(),
+  free: z.number(),
+  usagePercent: z.number(),
+});
+
+export const memoryModuleSchema = z.object({
+  bank: z.string(),
+  size: z.number(),
+  type: z.string(),
+  clockSpeed: z.number().nullable(),
+  formFactor: z.string(),
+});
+
 export const memoryMetricsSchema = z.object({
   total: z.number(),
   used: z.number(),
   available: z.number(),
   usagePercent: z.number(),
+  swapTotal: z.number().optional(),
+  swapUsed: z.number().optional(),
+  swapUsagePercent: z.number().optional(),
+  nodes: z.array(memoryNodeSchema).optional(),
+  modules: z.array(memoryModuleSchema).optional(),
 });
 
 export const osInfoSchema = z.object({
@@ -31,6 +53,8 @@ export const metricsResponseSchema = z.object({
 });
 
 export type CpuMetrics = z.infer<typeof cpuMetricsSchema>;
+export type MemoryNode = z.infer<typeof memoryNodeSchema>;
+export type MemoryModule = z.infer<typeof memoryModuleSchema>;
 export type MemoryMetrics = z.infer<typeof memoryMetricsSchema>;
 export type OsInfo = z.infer<typeof osInfoSchema>;
 export type MetricsResponse = z.infer<typeof metricsResponseSchema>;
@@ -39,4 +63,4 @@ export type MetricsHistoryPoint = {
   time: string;
   cpu: number;
   memory: number;
-};
+} & Record<string, string | number>;

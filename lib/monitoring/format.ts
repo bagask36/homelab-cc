@@ -18,6 +18,11 @@ export function formatMemorySummary(memory: MemoryMetrics | undefined): string {
   return `${formatBytesGB(memory.used)} / ${formatBytesGB(memory.total)} GB`;
 }
 
+export function formatSwapSummary(memory: MemoryMetrics | undefined): string {
+  if (!memory || !memory.swapTotal) return "No swap";
+  return `${formatBytesGB(memory.swapUsed)} / ${formatBytesGB(memory.swapTotal)} GB`;
+}
+
 export function formatStorageSummary(storage: StorageSummary | undefined): string {
   if (!storage) return "— / — GB";
   return `${formatBytesGB(storage.used)} / ${formatBytesGB(storage.total)} GB`;
