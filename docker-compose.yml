@@ -39,7 +39,7 @@ services:
       dockerfile: Dockerfile
       target: runner
     ports:
-      - "${PORT:-3000}:3000"
+      - "${PORT:-3001}:3000"
     depends_on:
       postgres:
         condition: service_healthy
