@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 
 import { DashboardPanel } from "@/components/dashboard/panel";
+import { OllamaApiKeysPanel } from "@/components/ollama/ollama-api-keys";
 import { SummaryCard } from "@/components/dashboard/summary-card";
 import { StatusIndicator } from "@/components/shared/status-indicator";
 import { Badge } from "@/components/ui/badge";
@@ -332,6 +333,8 @@ export function OllamaOverview() {
           )}
         </div>
       </DashboardPanel>
+
+      <OllamaApiKeysPanel models={(data?.models ?? []).map((model) => model.name)} />
 
       <DashboardPanel title="Running Models" description="Currently loaded in memory">
         {data?.runningModels && data.runningModels.length > 0 ? (

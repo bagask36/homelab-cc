@@ -10,6 +10,8 @@ export const auditActionSchema = z.enum([
   "tunnel.ingress.delete",
   "tunnel.config.apply",
   "tunnel.config.import",
+  "ollama.apikey.create",
+  "ollama.apikey.revoke",
 ]);
 
 export const auditLogSchema = z.object({
@@ -54,5 +56,9 @@ export function auditActionLabel(action: AuditAction): string {
       return "Apply tunnel config";
     case "tunnel.config.import":
       return "Import tunnel config";
+    case "ollama.apikey.create":
+      return "Create Ollama API key";
+    case "ollama.apikey.revoke":
+      return "Revoke Ollama API key";
   }
 }

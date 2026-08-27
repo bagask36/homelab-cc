@@ -11,6 +11,10 @@ const PUBLIC_PATHS = new Set([
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  if (pathname.startsWith("/api/v1/")) {
+    return NextResponse.next();
+  }
+
   if (PUBLIC_PATHS.has(pathname)) {
     const session = await getSessionFromRequest(request);
     if (session && pathname === "/login") {

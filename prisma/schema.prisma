@@ -52,3 +52,16 @@ model TunnelIngress {
 
   @@index([sortOrder])
 }
+
+model ApiKey {
+  id         String    @id @default(cuid())
+  name       String
+  keyPrefix  String
+  keyHash    String    @unique
+  model      String?
+  createdAt  DateTime  @default(now()) @db.Timestamptz(3)
+  lastUsedAt DateTime? @db.Timestamptz(3)
+  revokedAt  DateTime? @db.Timestamptz(3)
+
+  @@index([revokedAt])
+}
