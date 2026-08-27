@@ -56,10 +56,12 @@ export async function getOllamaHealth(): Promise<OllamaHealth> {
       runningModels,
     };
   } catch (error) {
+    const detail =
+      error instanceof Error ? error.message : "Ollama unavailable";
     return {
       online: false,
       responseTimeMs: Date.now() - start,
-      message: error instanceof Error ? error.message : "Ollama unavailable",
+      message: `Cannot reach ${baseUrl} (${detail})`,
       models: [],
       runningModels: [],
     };
