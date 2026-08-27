@@ -10,7 +10,10 @@ import {
 import type { AuditAction } from "@/types/audit";
 import type { ContainerActionRequest } from "@/types/docker-control";
 
-type ControlAction = Exclude<AuditAction, "container.logs">;
+type ControlAction = Extract<
+  AuditAction,
+  "container.start" | "container.stop" | "container.restart"
+>;
 
 export class ContainerControlError extends Error {
   status: number;
@@ -137,5 +140,7 @@ function actionLabel(action: ControlAction): string {
       return "Stop";
     case "container.restart":
       return "Restart";
+    default:
+      return action satisfies never;
   }
 }

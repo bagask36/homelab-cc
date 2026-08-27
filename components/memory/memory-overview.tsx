@@ -24,7 +24,7 @@ export function MemoryOverview() {
       <div>
         <h2 className="text-2xl font-semibold tracking-tight">Memory</h2>
         <p className="text-sm text-muted-foreground">
-          RAM usage by node
+          Application RAM (Linux cache excluded, same as Netdata)
           {data?.hostname ? ` on ${data.hostname}` : ""}
         </p>
       </div>
@@ -66,7 +66,7 @@ export function MemoryOverview() {
 
       <DashboardPanel
         title="Memory by node"
-        description="Usage per NUMA node, or the host when NUMA is not exposed"
+        description="Used RAM excludes reclaimable cache (MemAvailable)"
       >
         <MemoryNodeList nodes={nodes} isLoading={isLoading && !data} />
       </DashboardPanel>

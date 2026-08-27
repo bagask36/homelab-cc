@@ -5,6 +5,11 @@ export const auditActionSchema = z.enum([
   "container.stop",
   "container.restart",
   "container.logs",
+  "tunnel.ingress.create",
+  "tunnel.ingress.update",
+  "tunnel.ingress.delete",
+  "tunnel.config.apply",
+  "tunnel.config.import",
 ]);
 
 export const auditLogSchema = z.object({
@@ -39,5 +44,15 @@ export function auditActionLabel(action: AuditAction): string {
       return "Restart container";
     case "container.logs":
       return "View logs";
+    case "tunnel.ingress.create":
+      return "Add tunnel ingress";
+    case "tunnel.ingress.update":
+      return "Update tunnel ingress";
+    case "tunnel.ingress.delete":
+      return "Delete tunnel ingress";
+    case "tunnel.config.apply":
+      return "Apply tunnel config";
+    case "tunnel.config.import":
+      return "Import tunnel config";
   }
 }

@@ -3,6 +3,7 @@
 import { DashboardPanel } from "@/components/dashboard/panel";
 import { SummaryCard } from "@/components/dashboard/summary-card";
 import { StatusIndicator } from "@/components/shared/status-indicator";
+import { TunnelConfigPanel } from "@/components/tunnel/tunnel-config-panel";
 import { useTunnel } from "@/hooks/useTunnel";
 import { formatTimestamp } from "@/lib/monitoring/format";
 import { ClockIcon, CloudIcon, RadioIcon } from "lucide-react";
@@ -18,7 +19,7 @@ export function TunnelOverview() {
           Cloudflare Tunnel
         </h2>
         <p className="text-sm text-muted-foreground">
-          Tunnel connectivity via cloudflared metrics endpoint
+          Tunnel connectivity and ingress configuration for cloudflared
         </p>
       </div>
 
@@ -77,6 +78,8 @@ export function TunnelOverview() {
           </p>
         </div>
       </DashboardPanel>
+
+      <TunnelConfigPanel />
     </div>
   );
 }

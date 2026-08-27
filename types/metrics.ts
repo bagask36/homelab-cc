@@ -11,6 +11,7 @@ export const memoryNodeSchema = z.object({
   total: z.number(),
   used: z.number(),
   free: z.number(),
+  cached: z.number().optional(),
   usagePercent: z.number(),
 });
 
@@ -26,6 +27,7 @@ export const memoryMetricsSchema = z.object({
   total: z.number(),
   used: z.number(),
   available: z.number(),
+  cached: z.number().optional(),
   usagePercent: z.number(),
   swapTotal: z.number().optional(),
   swapUsed: z.number().optional(),

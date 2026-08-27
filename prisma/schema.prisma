@@ -40,3 +40,15 @@ model AuditLog {
 
   @@index([timestamp(sort: Desc)])
 }
+
+model TunnelIngress {
+  id        String   @id @default(cuid())
+  hostname  String?
+  service   String
+  sortOrder Int      @default(0)
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  @@index([sortOrder])
+}

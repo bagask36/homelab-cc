@@ -71,10 +71,16 @@ services:
       OPENWEBUI_URL: ${OPENWEBUI_URL:-http://127.0.0.1:8080}
       NPM_URL: ${NPM_URL:-http://127.0.0.1:81}
       CLOUDFLARE_TUNNEL_METRICS_URL: ${CLOUDFLARE_TUNNEL_METRICS_URL:-http://127.0.0.1:20241/metrics}
+      CLOUDFLARE_TUNNEL_ID: ${CLOUDFLARE_TUNNEL_ID:-}
+      CLOUDFLARE_TUNNEL_CONFIG_PATH: ${CLOUDFLARE_TUNNEL_CONFIG_PATH:-/etc/cloudflared/config.yml}
+      CLOUDFLARE_TUNNEL_CREDENTIALS_FILE: ${CLOUDFLARE_TUNNEL_CREDENTIALS_FILE:-/etc/cloudflared/credentials.json}
+      CLOUDFLARE_TUNNEL_RELOAD_CMD: ${CLOUDFLARE_TUNNEL_RELOAD_CMD:-}
     volumes:
       - ${DOCKER_SOCKET:-/var/run/docker.sock}:/var/run/docker.sock:ro
       # Host filesystem for storage metrics (rslave exposes nested mounts on Linux)
       - ${HOST_FS_SOURCE:-/}:${HOST_FS_ROOT:-/host}:ro,rslave
+      # Writable cloudflared config (adjust path to your host setup)
+      - ${CLOUDFLARE_TUNNEL_CONFIG_DIR:-/etc/cloudflared}:${CLOUDFLARE_TUNNEL_CONFIG_DIR:-/etc/cloudflared}:rw
     # Root required to read the Docker socket on most hosts
     user: "0:0"
     restart: unless-stopped

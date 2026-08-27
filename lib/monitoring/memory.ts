@@ -6,11 +6,19 @@ import si from "systeminformation";
 
 import type { MemoryMetrics, MemoryModule, MemoryNode } from "@/types/metrics";
 
+type ParsedMeminfo = {
+  total: number;
+  free: number;
+  available: number;
+  used: number;
+  cached: number;
+  swapTotal: number;
+  swapUsed: number;
+};
+
 export async function getMemoryMetrics(): Promise<MemoryMetrics> {
-  const mem = await si.mem();
+  const mem = (await readHostMeminfo()) ?? fromSysteminformation(await si.mem());
   const usagePercent = mem.total > 0 ? (mem.used / mem.total) * 100 : 0;
-  const swapTotal = mem.swaptotal ?? 0;
-  const swapUsed = mem.swapused ?? 0;
 
   const [nodes, modules] = await Promise.all([
     getMemoryNodes(mem),
@@ -21,21 +29,51 @@ export async function getMemoryMetrics(): Promise<MemoryMetrics> {
     total: mem.total,
     used: mem.used,
     available: mem.available,
+    cached: mem.cached,
     usagePercent: round(usagePercent),
-    swapTotal,
-    swapUsed,
+    swapTotal: mem.swapTotal,
+    swapUsed: mem.swapUsed,
     swapUsagePercent:
-      swapTotal > 0 ? round((swapUsed / swapTotal) * 100) : 0,
+      mem.swapTotal > 0 ? round((mem.swapUsed / mem.swapTotal) * 100) : 0,
     nodes,
     modules,
   };
 }
 
-async function getMemoryNodes(
+function fromSysteminformation(
   mem: Awaited<ReturnType<typeof si.mem>>
-): Promise<MemoryNode[]> {
+): ParsedMeminfo {
+  // `active` is total - MemAvailable (cache excluded), matching Netdata/htop.
+  // `used` from systeminformation is total - MemFree and includes cache.
+  const used = mem.active ?? Math.max(0, mem.total - mem.available);
+  return {
+    total: mem.total,
+    free: mem.free,
+    available: mem.available,
+    used,
+    cached: mem.buffcache ?? Math.max(0, mem.total - used - (mem.free ?? 0)),
+    swapTotal: mem.swaptotal ?? 0,
+    swapUsed: mem.swapused ?? 0,
+  };
+}
+
+async function getMemoryNodes(mem: ParsedMeminfo): Promise<MemoryNode[]> {
   const numaNodes = await readNumaNodes();
-  if (numaNodes.length > 0) {
+
+  if (numaNodes.length === 1) {
+    return [
+      {
+        ...numaNodes[0],
+        total: mem.total,
+        used: mem.used,
+        free: mem.available,
+        cached: mem.cached,
+        usagePercent: mem.total > 0 ? round((mem.used / mem.total) * 100) : 0,
+      },
+    ];
+  }
+
+  if (numaNodes.length > 1) {
     return numaNodes;
   }
 
@@ -46,9 +84,61 @@ async function getMemoryNodes(
       total: mem.total,
       used: mem.used,
       free: mem.available,
+      cached: mem.cached,
       usagePercent: mem.total > 0 ? round((mem.used / mem.total) * 100) : 0,
     },
   ];
+}
+
+async function readHostMeminfo(): Promise<ParsedMeminfo | null> {
+  for (const path of procMeminfoCandidates()) {
+    const parsed = await readFile(path, "utf8")
+      .then(parseProcMeminfo)
+      .catch(() => null);
+    if (parsed) return parsed;
+  }
+  return null;
+}
+
+function procMeminfoCandidates(): string[] {
+  const hostRoot = getHostFsRoot();
+  const candidates: string[] = [];
+  if (hostRoot) {
+    candidates.push(join(hostRoot, "proc/meminfo"));
+  }
+  candidates.push("/proc/meminfo");
+  return candidates;
+}
+
+function parseProcMeminfo(text: string): ParsedMeminfo | null {
+  const values = readMeminfoValues(text, /^([^:]+):\s+(\d+)\s+kB/i);
+  return toParsedMeminfo(values);
+}
+
+function toParsedMeminfo(values: Map<string, number>): ParsedMeminfo | null {
+  const total = values.get("MemTotal") ?? 0;
+  if (total <= 0) return null;
+
+  const free = values.get("MemFree") ?? 0;
+  const buffers = values.get("Buffers") ?? 0;
+  const cached = values.get("Cached") ?? 0;
+  const sreclaimable = values.get("SReclaimable") ?? 0;
+  const buffcache = buffers + cached + sreclaimable;
+  const available =
+    values.get("MemAvailable") ?? Math.min(total, free + buffcache);
+  const used = Math.max(0, total - available);
+  const swapTotal = values.get("SwapTotal") ?? 0;
+  const swapFree = values.get("SwapFree") ?? 0;
+
+  return {
+    total,
+    free,
+    available: Math.min(total, available),
+    used,
+    cached: buffcache,
+    swapTotal,
+    swapUsed: Math.max(0, swapTotal - swapFree),
+  };
 }
 
 async function readNumaNodes(): Promise<MemoryNode[]> {
@@ -101,28 +191,41 @@ async function readNumaNodesFrom(root: string): Promise<MemoryNode[]> {
 }
 
 function parseNumaMeminfo(text: string, id: number): MemoryNode | null {
-  const values = new Map<string, number>();
-
-  for (const line of text.split("\n")) {
-    const match = line.match(/^Node\s+\d+\s+(\w+):\s+(\d+)\s+kB/i);
-    if (!match) continue;
-    values.set(match[1], Number(match[2]) * 1024);
-  }
-
+  const values = readMeminfoValues(text, /^Node\s+\d+\s+([^:]+):\s+(\d+)\s+kB/i);
   const total = values.get("MemTotal") ?? 0;
   if (total <= 0) return null;
 
   const free = values.get("MemFree") ?? 0;
-  const used = values.get("MemUsed") ?? Math.max(0, total - free);
+  const filePages =
+    values.get("FilePages") ??
+    (values.get("Active(file)") ?? 0) + (values.get("Inactive(file)") ?? 0);
+  const reclaimable =
+    values.get("SReclaimable") ?? values.get("KReclaimable") ?? 0;
+  const cached = filePages + reclaimable;
+  const available = Math.min(total, free + cached);
+  const used = Math.max(0, total - available);
 
   return {
     id,
     name: `Node ${id}`,
     total,
     used,
-    free,
+    free: available,
+    cached,
     usagePercent: round((used / total) * 100),
   };
+}
+
+function readMeminfoValues(text: string, pattern: RegExp): Map<string, number> {
+  const values = new Map<string, number>();
+
+  for (const line of text.split("\n")) {
+    const match = line.match(pattern);
+    if (!match) continue;
+    values.set(match[1].trim(), Number(match[2]) * 1024);
+  }
+
+  return values;
 }
 
 async function getMemoryModules(): Promise<MemoryModule[]> {

@@ -37,6 +37,9 @@ export function MemoryNodeList({
               <p className="truncate text-sm font-medium">{node.name}</p>
               <p className="truncate text-xs text-muted-foreground">
                 {formatBytesCompact(node.free)} available
+                {node.cached
+                  ? ` · ${formatBytesCompact(node.cached)} cache`
+                  : ""}
               </p>
             </div>
             <div className="w-full sm:w-56">

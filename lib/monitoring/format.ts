@@ -15,7 +15,9 @@ export function formatBytesGB(bytes: number | undefined): string {
 
 export function formatMemorySummary(memory: MemoryMetrics | undefined): string {
   if (!memory) return "— / — GB";
-  return `${formatBytesGB(memory.used)} / ${formatBytesGB(memory.total)} GB`;
+  const summary = `${formatBytesGB(memory.used)} / ${formatBytesGB(memory.total)} GB`;
+  if (!memory.cached) return summary;
+  return `${summary} · ${formatBytesGB(memory.cached)} GB cache`;
 }
 
 export function formatSwapSummary(memory: MemoryMetrics | undefined): string {
