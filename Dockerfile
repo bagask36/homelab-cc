@@ -8,7 +8,8 @@ FROM base AS deps
 COPY package.json package-lock.json ./
 COPY prisma ./prisma
 COPY prisma.config.ts ./prisma.config.ts
-RUN npm ci
+# postinstall runs `prisma generate`, which requires a datasource URL but does not connect
+RUN DATABASE_URL="postgresql://placeholder:placeholder@127.0.0.1:5432/placeholder" npm ci
 
 # Local development with hot reload
 FROM base AS development
@@ -24,7 +25,7 @@ FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN npx prisma generate
+RUN DATABASE_URL="postgresql://placeholder:placeholder@127.0.0.1:5432/placeholder" npx prisma generate
 RUN npm run build
 
 # Database migrations (one-shot compose service)

@@ -3,12 +3,18 @@
 import "dotenv/config";
 import { defineConfig } from "prisma/config";
 
+// `prisma generate` (including the postinstall hook) validates this URL but
+// does not connect. Docker builds have no `.env`, so keep a placeholder.
+const datasourceUrl =
+  process.env["DATABASE_URL"] ||
+  "postgresql://placeholder:placeholder@127.0.0.1:5432/placeholder";
+
 export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
     path: "prisma/migrations",
   },
   datasource: {
-    url: process.env["DATABASE_URL"],
+    url: datasourceUrl,
   },
 });
