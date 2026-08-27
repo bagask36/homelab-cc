@@ -196,29 +196,23 @@ You want `307` to `/login` (or `200` if already signed in), not a timeout.
 
 ## Ollama API keys
 
-On **Ollama**, generate a key (shown once). Other apps call the dashboard, which proxies to local Ollama.
+Full chatbot docs: **[docs/ai-api.md](docs/ai-api.md)** (endpoints, streaming, Python / JS examples).
+
+On **Ollama**, generate a key (shown once). Other apps call the dashboard; the dashboard proxies to local Ollama.
 
 ```text
-Base URL:  https://dashboard.example.com/api/v1
+Base URL:  https://hcc.mhswmr.net/api/v1
 API key:   hcc_…
 ```
 
 ```bash
-curl https://dashboard.example.com/api/v1/chat/completions \
+curl https://hcc.mhswmr.net/api/v1/chat/completions \
   -H "Authorization: Bearer hcc_…" \
   -H "Content-Type: application/json" \
   -d '{"model":"YOUR_MODEL","messages":[{"role":"user","content":"Hello"}]}'
 ```
 
-```python
-from openai import OpenAI
-client = OpenAI(
-    base_url="https://dashboard.example.com/api/v1",
-    api_key="hcc_…",
-)
-```
-
-Allowed routes: `GET /api/v1/models`, `POST /api/v1/chat/completions`, `/completions`, `/embeddings`. Keys are stored hashed; revoke them on the same page.
+Allowed routes: `GET /models`, `POST /chat/completions`, `/completions`, `/embeddings`. Keys are stored hashed; revoke them on the same page.
 
 ## Update
 
