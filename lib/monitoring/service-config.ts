@@ -1,5 +1,6 @@
 function hostDefault(): string {
-  return process.env.SERVICE_HOST ?? "host.docker.internal";
+  // With network_mode: host, 127.0.0.1 is the machine. Override via SERVICE_HOST if needed.
+  return process.env.SERVICE_HOST ?? "127.0.0.1";
 }
 
 export const serviceEnv = {

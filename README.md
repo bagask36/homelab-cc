@@ -106,6 +106,17 @@ volumes:
   - /var/run/docker.sock:/var/run/docker.sock:ro
 ```
 
+Storage metrics need the host filesystem mounted into the container (also configured):
+
+```yaml
+volumes:
+  - /:/host:ro,rslave
+environment:
+  HOST_FS_ROOT: /host
+```
+
+Without that bind mount, `/storage` only sees the container overlay and reports “No storage filesystems available”.
+
 Use a different host port:
 
 ```bash

@@ -6,6 +6,9 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-homelab}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-homelab}
       POSTGRES_DB: ${POSTGRES_DB:-homelab}
+    # Published so dashboard (network_mode: host) can use 127.0.0.1:5432
+    ports:
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -38,35 +41,40 @@ services:
       context: .
       dockerfile: Dockerfile
       target: runner
-    ports:
-      - "${PORT:-3001}:3000"
+    # Share host network so 127.0.0.1 reaches host services (cloudflared, etc.)
+    # `ports:` is ignored with host mode — app binds PORT on the host directly.
+    network_mode: host
     depends_on:
       postgres:
         condition: service_healthy
       migrate:
         condition: service_completed_successfully
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgresql://${POSTGRES_USER:-homelab}:${POSTGRES_PASSWORD:-homelab}@postgres:5432/${POSTGRES_DB:-homelab}
+      PORT: ${PORT:-3001}
+      HOSTNAME: 0.0.0.0
+      DATABASE_URL: postgresql://${POSTGRES_USER:-homelab}:${POSTGRES_PASSWORD:-homelab}@127.0.0.1:5432/${POSTGRES_DB:-homelab}
       AUTH_SECRET: ${AUTH_SECRET:-homelab-cc-dev-secret-change-me}
       AUTH_USERNAME: ${AUTH_USERNAME:-admin}
       AUTH_PASSWORD: ${AUTH_PASSWORD:-changeme}
       # false for HTTP (LAN/Tailscale); set true when served over HTTPS
       AUTH_COOKIE_SECURE: ${AUTH_COOKIE_SECURE:-false}
       DOCKER_SOCKET: /var/run/docker.sock
-      SERVICE_HOST: ${SERVICE_HOST:-host.docker.internal}
-      POSTGRES_HOST: ${POSTGRES_HOST:-host.docker.internal}
+      # Host root bind-mounted at /host so storage metrics see real disks
+      HOST_FS_ROOT: ${HOST_FS_ROOT:-/host}
+      SERVICE_HOST: ${SERVICE_HOST:-127.0.0.1}
+      POSTGRES_HOST: ${POSTGRES_HOST:-127.0.0.1}
       POSTGRES_PORT: ${POSTGRES_PORT:-5432}
-      REDIS_HOST: ${REDIS_HOST:-host.docker.internal}
+      REDIS_HOST: ${REDIS_HOST:-127.0.0.1}
       REDIS_PORT: ${REDIS_PORT:-6379}
-      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
-      OPENWEBUI_URL: ${OPENWEBUI_URL:-http://host.docker.internal:8080}
-      NPM_URL: ${NPM_URL:-http://host.docker.internal:81}
-      CLOUDFLARE_TUNNEL_METRICS_URL: ${CLOUDFLARE_TUNNEL_METRICS_URL:-http://host.docker.internal:20241/metrics}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://127.0.0.1:11434}
+      OPENWEBUI_URL: ${OPENWEBUI_URL:-http://127.0.0.1:8080}
+      NPM_URL: ${NPM_URL:-http://127.0.0.1:81}
+      CLOUDFLARE_TUNNEL_METRICS_URL: ${CLOUDFLARE_TUNNEL_METRICS_URL:-http://127.0.0.1:20241/metrics}
     volumes:
       - ${DOCKER_SOCKET:-/var/run/docker.sock}:/var/run/docker.sock:ro
+      # Host filesystem for storage metrics (rslave exposes nested mounts on Linux)
+      - ${HOST_FS_SOURCE:-/}:${HOST_FS_ROOT:-/host}:ro,rslave
     # Root required to read the Docker socket on most hosts
     user: "0:0"
     restart: unless-stopped
