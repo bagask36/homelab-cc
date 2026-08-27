@@ -54,14 +54,17 @@ model TunnelIngress {
 }
 
 model ApiKey {
-  id         String    @id @default(cuid())
-  name       String
-  keyPrefix  String
-  keyHash    String    @unique
-  model      String?
-  createdAt  DateTime  @default(now()) @db.Timestamptz(3)
-  lastUsedAt DateTime? @db.Timestamptz(3)
-  revokedAt  DateTime? @db.Timestamptz(3)
+  id               String    @id @default(cuid())
+  name             String
+  keyPrefix        String
+  keyHash          String    @unique
+  model            String?
+  promptTokens     Int       @default(0)
+  completionTokens Int       @default(0)
+  totalTokens      Int       @default(0)
+  createdAt        DateTime  @default(now()) @db.Timestamptz(3)
+  lastUsedAt       DateTime? @db.Timestamptz(3)
+  revokedAt        DateTime? @db.Timestamptz(3)
 
   @@index([revokedAt])
 }

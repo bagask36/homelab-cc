@@ -18,6 +18,12 @@ export type VerifiedApiKey = {
   model: string | null;
 };
 
+export type ApiKeyTokenUsage = {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+};
+
 const TOKEN_PREFIX = "hcc_";
 
 function requirePrisma() {
@@ -40,6 +46,9 @@ function mapKey(row: {
   name: string;
   keyPrefix: string;
   model: string | null;
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
   createdAt: Date;
   lastUsedAt: Date | null;
 }): ApiKey {
@@ -48,6 +57,9 @@ function mapKey(row: {
     name: row.name,
     keyPrefix: row.keyPrefix,
     model: row.model,
+    promptTokens: row.promptTokens,
+    completionTokens: row.completionTokens,
+    totalTokens: row.totalTokens,
     createdAt: row.createdAt.toISOString(),
     lastUsedAt: row.lastUsedAt?.toISOString() ?? null,
   };
@@ -87,7 +99,6 @@ export async function revokeApiKey(id: string): Promise<void> {
   if (!existing || existing.revokedAt) {
     throw new ApiKeyError("API key not found", 404);
   }
-
   await prisma.apiKey.update({
     where: { id },
     data: { revokedAt: new Date() },
@@ -129,6 +140,39 @@ export async function touchApiKeyLastUsed(id: string): Promise<void> {
     await prisma.apiKey.update({
       where: { id },
       data: { lastUsedAt: new Date() },
+    });
+  } catch {
+    // Non-critical; ignore stale/revoked keys
+  }
+}
+
+export async function recordApiKeyUsage(
+  id: string,
+  usage: ApiKeyTokenUsage
+): Promise<void> {
+  const prisma = getPrisma();
+  if (!prisma) return;
+
+  const promptTokens = Math.max(0, Math.floor(usage.promptTokens));
+  const completionTokens = Math.max(0, Math.floor(usage.completionTokens));
+  const totalTokens = Math.max(
+    0,
+    Math.floor(usage.totalTokens || promptTokens + completionTokens)
+  );
+
+  if (promptTokens === 0 && completionTokens === 0 && totalTokens === 0) {
+    return;
+  }
+
+  try {
+    await prisma.apiKey.update({
+      where: { id },
+      data: {
+        lastUsedAt: new Date(),
+        promptTokens: { increment: promptTokens },
+        completionTokens: { increment: completionTokens },
+        totalTokens: { increment: totalTokens },
+      },
     });
   } catch {
     // Non-critical; ignore stale/revoked keys

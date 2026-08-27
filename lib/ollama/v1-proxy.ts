@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 
 import { serviceEnv } from "@/lib/monitoring/service-config";
 import {
+  recordApiKeyUsage,
   touchApiKeyLastUsed,
+  type ApiKeyTokenUsage,
   type VerifiedApiKey,
 } from "@/lib/ollama/api-keys";
 
@@ -53,6 +55,39 @@ function parseJsonObject(raw: string): Record<string, unknown> | null {
   return null;
 }
 
+function extractUsage(payload: Record<string, unknown> | null): ApiKeyTokenUsage | null {
+  if (!payload) return null;
+  const usage = payload.usage;
+  if (!usage || typeof usage !== "object" || Array.isArray(usage)) {
+    return null;
+  }
+
+  const record = usage as Record<string, unknown>;
+  const promptTokens = Number(record.prompt_tokens ?? 0);
+  const completionTokens = Number(record.completion_tokens ?? 0);
+  const totalTokens = Number(
+    record.total_tokens ?? promptTokens + completionTokens
+  );
+
+  if (
+    !Number.isFinite(promptTokens) ||
+    !Number.isFinite(completionTokens) ||
+    !Number.isFinite(totalTokens)
+  ) {
+    return null;
+  }
+
+  if (promptTokens <= 0 && completionTokens <= 0 && totalTokens <= 0) {
+    return null;
+  }
+
+  return {
+    promptTokens: Math.max(0, promptTokens),
+    completionTokens: Math.max(0, completionTokens),
+    totalTokens: Math.max(0, totalTokens),
+  };
+}
+
 function applyModelRestriction(
   path: string,
   body: Record<string, unknown>,
@@ -69,6 +104,51 @@ function applyModelRestriction(
 
   body.model = restrictedModel;
   return null;
+}
+
+function trackUsageFromSseStream(
+  keyId: string,
+  upstream: ReadableStream<Uint8Array>
+): ReadableStream<Uint8Array> {
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let recorded = false;
+  const reader = upstream.getReader();
+
+  return new ReadableStream({
+    async pull(controller) {
+      const { done, value } = await reader.read();
+      if (done) {
+        controller.close();
+        return;
+      }
+
+      controller.enqueue(value);
+      buffer += decoder.decode(value, { stream: true });
+
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+
+      if (recorded) return;
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed.startsWith("data:")) continue;
+        const data = trimmed.slice(5).trim();
+        if (!data || data === "[DONE]") continue;
+
+        const usage = extractUsage(parseJsonObject(data));
+        if (usage) {
+          recorded = true;
+          void recordApiKeyUsage(keyId, usage);
+          break;
+        }
+      }
+    },
+    cancel(reason) {
+      return reader.cancel(reason);
+    },
+  });
 }
 
 export async function proxyOllamaV1(options: {
@@ -91,8 +171,10 @@ export async function proxyOllamaV1(options: {
       headers.set("Content-Type", contentType);
     }
 
+    const parsed = parseJsonObject(body);
+    let bodyChanged = false;
+
     if (key.model) {
-      const parsed = parseJsonObject(body);
       if (!parsed) {
         return openaiError("Request body must be JSON", 400);
       }
@@ -100,6 +182,26 @@ export async function proxyOllamaV1(options: {
       if (restrictionError) {
         return openaiError(restrictionError, 403);
       }
+      bodyChanged = true;
+    }
+
+    // Ask upstream for usage on the final SSE chunk when streaming.
+    if (
+      parsed &&
+      parsed.stream === true &&
+      (path === "chat/completions" || path === "completions")
+    ) {
+      const existing =
+        parsed.stream_options &&
+        typeof parsed.stream_options === "object" &&
+        !Array.isArray(parsed.stream_options)
+          ? (parsed.stream_options as Record<string, unknown>)
+          : {};
+      parsed.stream_options = { ...existing, include_usage: true };
+      bodyChanged = true;
+    }
+
+    if (parsed && bodyChanged) {
       body = JSON.stringify(parsed);
       headers.set("Content-Type", "application/json");
     }
@@ -138,6 +240,35 @@ export async function proxyOllamaV1(options: {
   const contentType = upstream.headers.get("content-type");
   if (contentType) {
     responseHeaders.set("Content-Type", contentType);
+  }
+
+  const isEventStream = contentType?.includes("text/event-stream") ?? false;
+  const shouldTrackTokens =
+    upstream.ok &&
+    (path === "chat/completions" ||
+      path === "completions" ||
+      path === "embeddings");
+
+  if (shouldTrackTokens && isEventStream && upstream.body) {
+    return new Response(trackUsageFromSseStream(key.id, upstream.body), {
+      status: upstream.status,
+      statusText: upstream.statusText,
+      headers: responseHeaders,
+    });
+  }
+
+  if (shouldTrackTokens && !isEventStream) {
+    const text = await upstream.text();
+    const usage = extractUsage(parseJsonObject(text));
+    if (usage) {
+      void recordApiKeyUsage(key.id, usage);
+    }
+
+    return new Response(text, {
+      status: upstream.status,
+      statusText: upstream.statusText,
+      headers: responseHeaders,
+    });
   }
 
   return new Response(upstream.body, {

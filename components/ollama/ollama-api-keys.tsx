@@ -29,9 +29,17 @@ type OllamaApiKeysPanelProps = {
   models: string[];
 };
 
+function formatTokenCount(value: number): string {
+  return value.toLocaleString();
+}
+
 export function OllamaApiKeysPanel({ models }: OllamaApiKeysPanelProps) {
   const { data, error, isLoading, mutate } = useOllamaApiKeys();
   const keys = data?.keys ?? [];
+  const totalTokensUsed = useMemo(
+    () => keys.reduce((sum, key) => sum + key.totalTokens, 0),
+    [keys]
+  );
 
   const [name, setName] = useState("");
   const [model, setModel] = useState("");
@@ -189,12 +197,22 @@ export function OllamaApiKeysPanel({ models }: OllamaApiKeysPanelProps) {
             </Button>
           </form>
 
-          <p className="text-xs text-muted-foreground">
-            Base URL for clients:{" "}
-            <code className="rounded bg-muted px-1.5 py-0.5 font-mono">
-              {apiBase}
-            </code>
-          </p>
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+            <p>
+              Base URL for clients:{" "}
+              <code className="rounded bg-muted px-1.5 py-0.5 font-mono">
+                {apiBase}
+              </code>
+            </p>
+            {keys.length > 0 && (
+              <p>
+                Total tokens used:{" "}
+                <span className="font-medium text-foreground">
+                  {formatTokenCount(totalTokensUsed)}
+                </span>
+              </p>
+            )}
+          </div>
 
           {keys.length > 0 ? (
             <ul className="divide-y divide-border rounded-lg border border-border">
@@ -207,6 +225,14 @@ export function OllamaApiKeysPanel({ models }: OllamaApiKeysPanelProps) {
                     <p className="text-sm font-medium">{key.name}</p>
                     <p className="font-mono text-xs text-muted-foreground">
                       {key.keyPrefix}… · {key.model ?? "any model"}
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {formatTokenCount(key.totalTokens)} tokens
+                      <span className="text-muted-foreground/80">
+                        {" "}
+                        ({formatTokenCount(key.promptTokens)} prompt ·{" "}
+                        {formatTokenCount(key.completionTokens)} completion)
+                      </span>
                     </p>
                   </div>
                   <div className="flex items-center gap-2">

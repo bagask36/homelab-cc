@@ -5,6 +5,9 @@ export const apiKeySchema = z.object({
   name: z.string(),
   keyPrefix: z.string(),
   model: z.string().nullable(),
+  promptTokens: z.number().int().nonnegative(),
+  completionTokens: z.number().int().nonnegative(),
+  totalTokens: z.number().int().nonnegative(),
   createdAt: z.string(),
   lastUsedAt: z.string().nullable(),
 });
