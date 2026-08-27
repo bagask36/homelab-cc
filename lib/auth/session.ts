@@ -80,12 +80,10 @@ export async function getSession(): Promise<SessionUser | null> {
 }
 
 function cookieSecure(): boolean {
-  // Homelab often runs over HTTP (LAN / Tailscale). Only mark cookies Secure
-  // when explicitly enabled, or when AUTH_COOKIE_SECURE is unset and we are
-  // in production behind HTTPS.
-  if (process.env.AUTH_COOKIE_SECURE === "true") return true;
-  if (process.env.AUTH_COOKIE_SECURE === "false") return false;
-  return process.env.NODE_ENV === "production";
+  // Opt-in only. Homelab is often served over HTTP (LAN / Tailscale);
+  // browsers drop Secure cookies on http:// so login appears to succeed
+  // then immediately redirects back to /login.
+  return process.env.AUTH_COOKIE_SECURE === "true";
 }
 
 export function sessionCookieOptions(token: string) {
